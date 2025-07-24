@@ -3,7 +3,7 @@ const wallpaper = require("wallpaper");
 const path = require("path");
 const fs = require("fs");
 
-const updateWallpaper = async (goals, settings = {}) => {
+async function updateWallpaper(goals, settings = {}) {
   try {
     if (!goals || !Array.isArray(goals)) {
       throw new Error("Invalid goals data");
@@ -22,58 +22,8 @@ const updateWallpaper = async (goals, settings = {}) => {
       backgroundType = "default",
     } = settings;
 
-    // Validate settings
-    if (!textColor || typeof textColor !== "string") {
-      throw new Error("Invalid text color");
-    }
-    if (!textSize || typeof textSize !== "number") {
-      throw new Error("Invalid text size");
-    }
-
-    // Create background based on type
-    let backgroundImage;
-
-    if (backgroundType === "default") {
-      // Check if default wallpaper exists
-      const defaultWallpaperPath = path.join(
-        process.cwd(),
-        "default_wallpaper.jpg"
-      );
-      try {
-        backgroundImage = sharp(defaultWallpaperPath);
-      } catch (error) {
-        console.log(
-          "Default wallpaper not found, creating gradient background"
-        );
-        backgroundImage = sharp({
-          create: {
-            width: 1920,
-            height: 1080,
-            channels: 4,
-            background: "#667eea",
-          },
-        });
-      }
-    } else {
-      // Create gradient backgrounds
-      const colors = {
-        gradient1: "#667eea",
-        gradient2: "#f093fb",
-        gradient3: "#4facfe",
-      };
-
-      backgroundImage = sharp({
-        create: {
-          width: 1920,
-          height: 1080,
-          channels: 4,
-          background: colors[backgroundType] || "#667eea",
-        },
-      });
-    }
-
-    // Create SVG with goals text
-    const svgText = `
+    // Create SVG text
+    const svgContent = `
       <svg width="1920" height="1080">
         <style>
           .title { 
@@ -100,30 +50,48 @@ const updateWallpaper = async (goals, settings = {}) => {
           .join("")}
       </svg>`;
 
-    // Create temporary file path for the wallpaper
+    // Create background
+    const colors = {
+      gradient1: "#667eea",
+      gradient2: "#f093fb",
+      gradient3: "#4facfe",
+      default: "#2c3e50",
+    };
+
+    const backgroundColor = colors[backgroundType] || colors.default;
+
+    // Create the base image
+    const image = sharp({
+      create: {
+        width: 1920,
+        height: 1080,
+        channels: 4,
+        background: backgroundColor,
+      },
+    });
+
+    // Add text overlay
     const outputPath = path.join(outputDir, "current_wallpaper.jpg");
 
-    // Create final image with text overlay
-    await backgroundImage
+    await image
       .composite([
         {
-          input: Buffer.from(svgText),
+          input: Buffer.from(svgContent),
           top: 0,
           left: 0,
         },
       ])
-      .jpeg({ quality: 90 })
+      .jpeg()
       .toFile(outputPath);
 
     // Set as wallpaper
     await wallpaper.set(outputPath);
 
-    console.log("✅ Wallpaper updated successfully!");
     return { success: true };
   } catch (error) {
-    console.error("❌ Error updating wallpaper:", error);
+    console.error("Error in updateWallpaper:", error);
     return { success: false, error: error.message };
   }
-};
+}
 
 module.exports = { updateWallpaper };

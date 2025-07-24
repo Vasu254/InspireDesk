@@ -180,8 +180,8 @@
       }
 
       .goal-item {
-        background: #f8f9fa;
-        border: 1px solid #e9ecef;
+        background: #8989ff;
+        border: 1px solid #101111;
         border-radius: 8px;
         padding: 15px;
         margin-bottom: 10px;
@@ -191,12 +191,11 @@
         transition: all 0.3s ease;
       }
 
-      .goal-item:hover {
+      <!-- .goal-item:hover {
         background: #e9ecef;
         transform: translateX(5px);
       }
-
-      .goal-text {
+      -- > .goal-text {
         flex: 1;
         margin-right: 15px;
       }
@@ -455,6 +454,17 @@
         <h2>📋 Today's Goals</h2>
         <div id="goalItems"></div>
       </div>
+
+      <!-- Refresh Button Section -->
+      <div class="refresh-section" style="text-align: center; margin-top: 30px">
+        <button
+          id="refreshButton"
+          class="btn-primary"
+          style="width: auto; padding: 15px 40px"
+        >
+          🔄 Refresh Page
+        </button>
+      </div>
     </div>
     <script>
       let currentGoals = [];
@@ -495,19 +505,33 @@
             if (response.ok) {
               // Call wallpaper update function with settings
               try {
+                // Validate settings before sending
+                if (!settings.textColor) {
+                  throw new Error("Please select a text color");
+                }
+                if (!settings.textSize) {
+                  throw new Error("Please select a text size");
+                }
+                if (!settings.backgroundType) {
+                  throw new Error("Please select a background type");
+                }
+
                 const result = await window.electronAPI.updateWallpaper(
                   goals,
                   settings
                 );
+
                 if (result.success) {
                   alert("✅ Goals saved and wallpaper updated successfully!");
                   document.getElementById("goals").value = "";
                   currentGoals = goals;
                   displayGoals();
                 } else {
+                  console.error("Wallpaper update failed:", result.error);
                   alert(
                     "❌ Wallpaper update failed: " +
-                      (result.error || "Unknown error")
+                      (result.error ||
+                        "Please check your settings and try again")
                   );
                 }
               } catch (wallpaperError) {
@@ -552,7 +576,7 @@
         }
       });
 
-      <!-- // Display goals in the list
+      // Display goals in the list
       function displayGoals() {
         const goalList = document.getElementById("goalList");
         const goalItems = document.getElementById("goalItems");
@@ -607,7 +631,7 @@
         const savedTheme = localStorage.getItem("theme") || "light";
         changeTheme(savedTheme);
         document.getElementById("themeMode").value = savedTheme;
-      }); -->
+      });
 
       // Theme switcher
       function changeTheme(mode) {
@@ -618,6 +642,56 @@
         }
         localStorage.setItem("theme", mode);
       }
+
+      // Refresh button functionality
+      document
+        .getElementById("refreshButton")
+        .addEventListener("click", async function () {
+          if (confirm("Are you sure you want to refresh? This will reset all settings but keep your ability to add new goals.")) {
+            try {
+              // Clear all goals but keep the textarea enabled
+              document.getElementById("goals").value = "";
+              document.getElementById("goals").disabled = false;
+              document.getElementById("goals").placeholder = "Enter your daily goals (one per line)\nExample:\n• Exercise for 30 minutes\n• Read 20 pages\n• Learn something new\n• Drink 8 glasses of water";
+              currentGoals = [];
+              displayGoals();
+
+              // Reset all settings to default
+              document.getElementById("themeMode").value = "light";
+              document.getElementById("textColor").value = "#ffffff";
+              document.getElementById("textSize").value = "32";
+              document.getElementById("backgroundType").value = "default";
+
+            // Reset theme
+            changeTheme("light");
+
+            // Clear chat history
+            document.getElementById("chatMessages").innerHTML = "";
+            chatHistory = [];
+
+            // Show welcome message again
+            const welcomeMessage =
+              "👋 Hello! I'm your InspireDesk AI Assistant. How can I help you today? You can ask me about:\n• How to use InspireDesk\n• Managing your goals\n• Customizing themes\n• Any other features!";
+            addMessage("ai", welcomeMessage);
+
+            // Enable all inputs and buttons
+            document.getElementById("goals").disabled = false;
+            document.getElementById("aiQuestion").disabled = false;
+            const buttons = document.querySelectorAll("button");
+            buttons.forEach(button => button.disabled = false);
+
+            // Focus on the goals textarea to make it ready for input
+            document.getElementById("goals").focus();
+
+            // Ensure AI input is enabled and cleared
+            const aiInput = document.getElementById("aiQuestion");
+            aiInput.value = "";
+            aiInput.disabled = false;
+
+            // Show success message
+            alert("✅ Page refreshed successfully! You can now enter new goals and use the AI assistant.");
+          }
+        });
 
       // Edit goal function (scrolls to textarea and sets the goal)
       document.addEventListener("click", function (e) {
@@ -647,6 +721,13 @@
       // AI Assistant
       let chatHistory = [];
 
+      // Initialize AI Assistant with welcome message
+      window.addEventListener("DOMContentLoaded", () => {
+        const welcomeMessage =
+          "👋 Hello! I'm your InspireDesk AI Assistant. How can I help you today? You can ask me about:\n• How to use InspireDesk\n• Managing your goals\n• Customizing themes\n• Any other features!";
+        addMessage("ai", welcomeMessage);
+      });
+
       function askAI() {
         const input = document.getElementById("aiQuestion");
         const question = input.value.trim();
@@ -664,13 +745,21 @@
 
         // Clear input
         input.value = "";
+
+        // Scroll chat to bottom
+        const chatMessages = document.getElementById("chatMessages");
+        chatMessages.scrollTop = chatMessages.scrollHeight;
       }
 
       function addMessage(type, text) {
         const messagesDiv = document.getElementById("chatMessages");
         const messageDiv = document.createElement("div");
         messageDiv.className = `message ${type}-message`;
-        messageDiv.textContent = text;
+
+        // Convert newlines to <br> tags for proper formatting
+        text = text.split("\n").join("<br>");
+        messageDiv.innerHTML = text;
+
         messagesDiv.appendChild(messageDiv);
         messagesDiv.scrollTop = messagesDiv.scrollHeight;
 
@@ -681,23 +770,48 @@
       function getAIResponse(question) {
         question = question.toLowerCase();
 
+        // More detailed responses for various user queries
         if (question.includes("how to") || question.includes("help")) {
-          return "To use InspireDesk, start by entering your goals in the text area. Each goal should be on a new line. You can customize the appearance in the settings section, and click 'Set Goals' to update your wallpaper.";
+          return "Here's how to use InspireDesk:\n1. Enter your goals in the text area (one per line)\n2. Customize wallpaper settings (theme, colors, text size)\n3. Click 'Set Goals' to update your wallpaper\n4. Use 'Load Today's Goals' to view or edit existing goals\n\nNeed more specific help? Just ask!";
         }
 
-        if (question.includes("edit") || question.includes("change")) {
-          return "To edit a goal, either click the edit button next to the goal in the list, or directly modify it in the text area. Don't forget to click 'Set Goals' to save your changes.";
+        if (
+          question.includes("edit") ||
+          question.includes("change") ||
+          question.includes("modify")
+        ) {
+          return "There are two ways to edit your goals:\n1. Click the edit button (✏️) next to any goal in the list\n2. Directly modify goals in the text area\n\nDon't forget to click 'Set Goals' after making changes!";
         }
 
-        if (question.includes("dark mode") || question.includes("theme")) {
-          return "You can switch between light and dark mode in the settings section. Your preference will be saved for your next visit.";
+        if (
+          question.includes("dark mode") ||
+          question.includes("theme") ||
+          question.includes("color")
+        ) {
+          return "You can customize the appearance:\n1. Select Light/Dark mode from the Theme dropdown\n2. Choose text color using the color picker\n3. Adjust text size from Small to Extra Large\n4. Pick from different background styles\n\nYour preferences are automatically saved!";
         }
 
-        if (question.includes("save") || question.includes("store")) {
-          return "Your goals are automatically saved when you click 'Set Goals'. You can load your latest goals anytime using the 'Load Today's Goals' button.";
+        if (
+          question.includes("save") ||
+          question.includes("store") ||
+          question.includes("backup")
+        ) {
+          return "InspireDesk automatically saves your goals when you click 'Set Goals'. You can:\n1. Load previous goals using 'Load Today's Goals'\n2. Edit or delete individual goals from the list\n3. Clear all goals using the 'Clear All' button";
         }
 
-        return "I'm here to help! You can ask me about how to use InspireDesk, edit goals, change themes, or save your progress.";
+        if (question.includes("wallpaper") || question.includes("background")) {
+          return "Wallpaper settings can be customized in the Settings section:\n1. Choose from different background styles\n2. Adjust text color and size\n3. Switch between light and dark themes\n\nChanges are applied when you click 'Set Goals'";
+        }
+
+        if (
+          question.includes("hello") ||
+          question.includes("hi ") ||
+          question.includes("hey")
+        ) {
+          return "Hello! 👋 I'm your InspireDesk assistant. I can help you with:\n• Setting up and managing goals\n• Customizing your wallpaper\n• Using different features\n• Troubleshooting issues\n\nWhat would you like to know?";
+        }
+
+        return "I'm here to help! You can ask me about:\n• How to use InspireDesk\n• Managing your goals\n• Customizing themes and wallpapers\n• Saving and loading goals\n• Any other features!\n\nJust ask a specific question, and I'll guide you through it.";
       }
     </script>
   </body>

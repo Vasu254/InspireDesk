@@ -1,6 +1,6 @@
 const { app, BrowserWindow, ipcMain, Notification } = require("electron");
 const path = require("path");
-const { updateWallpaper } = require("./utils/wallpaper-generator");
+const { updateWallpaper } = require("./utils/wallpaper-generator-new");
 
 let mainWindow;
 
@@ -47,6 +47,9 @@ function showNotification(title, body) {
 
 // Handle wallpaper update
 ipcMain.handle("update-wallpaper", async (event, goals, settings) => {
+  if (!goals || !Array.isArray(goals) || goals.length === 0) {
+    return { success: false, error: "Invalid goals data" };
+  }
   try {
     console.log("Updating wallpaper with goals:", goals);
     console.log("Settings:", settings);
