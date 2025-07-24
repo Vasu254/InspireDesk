@@ -1,0 +1,33 @@
+{
+  "appId": "com.inspiredesk.app",
+  "productName": "InspireDesk",
+  "directories": {
+    "output": "dist"
+  },
+  "files": [
+    "**/*",
+    "!**/*.ts",
+    "!*.code-workspace",
+    "!LICENSE.md",
+    "!package.json",
+    "!package-lock.json",
+    "!src/",
+    "!e2e/",
+    "!hooks/",
+    "!.angular",
+    "!*.zip",
+    "!README.md"
+  ],
+  "win": {
+    "icon": "build/icon.ico",
+    "target": ["portable"]
+  },
+  "mac": {
+    "icon": "build/icon.icns",
+    "target": ["dmg"]
+  },
+  "linux": {
+    "icon": "build/icon.png",
+    "target": ["AppImage"]
+  }
+}

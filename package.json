@@ -4,16 +4,25 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "backend": "node backend/server.js"
+    "backend": "node backend/server.js",
+    "build": "electron-builder",
+    "build:web": "react-scripts build",
+    "deploy": "vercel"
   },
   "dependencies": {
     "cors": "^2.8.5",
     "express": "^4.17.1",
     "mongoose": "^5.13.3",
     "sharp": "^0.29.3",
-    "wallpaper": "^5.0.0"
+    "wallpaper": "^5.0.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-scripts": "5.0.1"
   },
   "devDependencies": {
-    "electron": "^13.6.9"
+    "electron": "^13.6.9",
+    "electron-builder": "^24.6.3",
+    "workbox-webpack-plugin": "^7.0.0",
+    "vercel": "^31.0.0"
   }
 }
